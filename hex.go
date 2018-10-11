@@ -2,8 +2,8 @@
 package main
 
 import (
-	"fmt"
 	"image"
+	"image/draw"
 	"image/png"
 	"log"
 	"os"
@@ -17,37 +17,36 @@ func hex() {
 		log.Fatal(err)
 	}
 	defer reader.Close()
-	m, _, err := image.Decode(reader)
+	inputImage, _, err := image.Decode(reader)
 	if err != nil {
 		log.Fatal(err)
 	}
-	bounds := m.Bounds()
 
-	// Split image into grid of 25x60 pixels
-	// Iterate through the elements setting a random color
-	const GRID_W = 25
-	const GRID_H = 60
+	bounds := inputImage.Bounds()
+	outImage := image.NewRGBA(bounds)
+	//blue := color.RGBA{0, 0, 255, 100}
 
-	out := image.NewRGBA(image.Rect(0, 0, bounds.Max.X, bounds.Max.Y))
-	out.Pix[3] = 123
+	const WIDTH = 30
+	const HEIGHT = 60
 
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			//r, g, b, a := m.At(x, y).RGBA()
-			if x%GRID_W == 0 && y%GRID_H == 0 {
-				//out.Pix[x*y] = 123
-				fmt.Print(x, y)
+			if x%WIDTH == 0 && y%HEIGHT == 0 {
+				draw.Draw(outImage, image.Rect(x, y, WIDTH, HEIGHT), inputImage, image.ZP, draw.Src)
 			}
-			//out.Pix[x*y] = m.At(x, y)
-
 		}
 	}
 
+	//draw.Draw(outImage, outImage.Bounds(), &image.Uniform{blue}, image.ZP, draw.Src)
+
+	// bounds := m.Bounds()
+
 	outputFile, err := os.Create("./output/out.png")
 	if err != nil {
+		log.Fatal(err)
 	}
-	png.Encode(outputFile, out)
-	outputFile.Close()
+	png.Encode(outputFile, outImage)
+	defer outputFile.Close()
 
-	fmt.Printf("test.")
+	log.Println("Done.")
 }

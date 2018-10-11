@@ -8,7 +8,7 @@ import (
 	"image"
 )
 
-func Draw() {
+func d() {
 	r := image.Rect(2, 1, 5, 5)
 	fmt.Print(r)
 

@@ -8,6 +8,6 @@ import (
 )
 
 func main() {
-	log.Print("dsdsd")
-	Draw()
+	log.Println("Inside Main")
+	hex()
 }
