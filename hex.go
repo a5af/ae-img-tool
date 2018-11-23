@@ -7,12 +7,15 @@ import (
 	"image/draw"
 	"image/png"
 	"log"
+	"math"
+	"math/rand"
 	"os"
+	"time"
 	//_ "image/gif"
 	//_ "image/jpeg"
 )
 
-func hex() {
+func readHex() image.Image {
 	reader, err := os.Open("./input/hex.png")
 	if err != nil {
 		log.Fatal(err)
@@ -23,36 +26,67 @@ func hex() {
 		log.Fatal(err)
 	}
 
-	bounds := inputImage.Bounds()
-	outImage := image.NewRGBA(bounds)
-	blue := color.RGBA{0, 0, 255, 100}
+	return inputImage
+}
 
-	const WIDTH = 5
-	const HEIGHT = 5
+func hex() {
+	w := 1600
+	h := 800
 
-	flag := true
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			if x%WIDTH == 0 && y%HEIGHT == 0 {
-				if flag {
-					draw.Draw(outImage, image.Rect(x, y, x+WIDTH, y+HEIGHT), inputImage, image.Point{x, y}, draw.Src)
+	//Colors
+	palette := []color.Color{
+		color.RGBA{0, 0, 255, 255},
+		color.RGBA{0, 255, 0, 255},
+		//color.RGBA{255, 0, 0, 255},
+		//color.RGBA{255, 255, 255, 255},
+		color.RGBA{0, 0, 0, 255},
+	}
 
-				} else {
-					draw.Draw(outImage, image.Rect(x, y, x+WIDTH, y+HEIGHT), &image.Uniform{blue}, image.ZP, draw.Src)
+	bounds := image.Rect(0, 0, w, h)
+	// outImage := image.NewPaletted(bounds, palette)
+
+	const WIDTH = 120
+	const HEIGHT = 100
+
+	s1 := rand.NewSource(time.Now().UnixNano())
+	r1 := rand.New(s1)
+	std := 2.0
+	mean := 2.5
+
+	images := []*image.Paletted{}
+	var delays []int
+	steps := 8
+
+	for step := 0; step < steps; step++ {
+		img := image.NewPaletted(image.Rect(0, 0, w, h), palette)
+		images = append(images, img)
+		delays = append(delays, 1)
+
+		//2d iteration
+		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+			for x := bounds.Min.X; x < bounds.Max.X; x++ {
+				if x%WIDTH == 0 && y%HEIGHT == 0 {
+					norm := r1.NormFloat64()
+					r := math.Min(float64(len(palette)-1), math.Max(math.Floor(norm*std+mean), 0))
+					draw.Draw(img, image.Rect(x, y, x+WIDTH, y+HEIGHT), &image.Uniform{palette[int(r)]}, image.ZP, draw.Src)
 				}
-				flag = !flag
 			}
 		}
 	}
 
-	// bounds := m.Bounds()
+	// f, _ := os.Create("./output/noise.gif")
+	// defer f.Close()
+	// gif.EncodeAll(f, &gif.GIF{
+	// 	Image: images,
+	// 	Delay: delays,
+	// })
 
 	outputFile, err := os.Create("./output/out.png")
+	defer outputFile.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
-	png.Encode(outputFile, outImage)
-	defer outputFile.Close()
+	png.Encode(outputFile, images[3])
 
 	log.Println("Done.")
 }
