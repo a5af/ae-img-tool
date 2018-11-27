@@ -62,7 +62,7 @@ func colorCheckers(w, h int) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	png.Encode(outputFile, images[3])
+	png.Encode(outputFile, img)
 
 	log.Println("Done.")
 }
