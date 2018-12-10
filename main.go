@@ -12,7 +12,7 @@ import (
 func main() {
 	log.Println("Inside Main")
 	// staticCheckers(1600, 800)
-	gifNoise(1600, 800)
+	gifNoise(820, 462)
 }
 
 func readHex() image.Image {
