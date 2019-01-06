@@ -2,17 +2,23 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
 	"image/gif"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
 	"time"
+
 	//_ "image/gif"
 	//_ "image/jpeg"
+	"github.com/golang/freetype/truetype"
+	"golang.org/x/image/font"
+	"golang.org/x/image/math/fixed"
 )
 
 /*
@@ -24,7 +30,75 @@ Matrix generator
 
 func main() {
 	log.Println("Inside Main")
-	drawAnim(200, 120)
+	//drawAnim(200, 120)
+	writeRandomText()
+}
+
+func printBounds(b fixed.Rectangle26_6) {
+	fmt.Printf("Min.X:%d Min.Y:%d Max.X:%d Max.Y:%d\n", b.Min.X, b.Min.Y, b.Max.X, b.Max.Y)
+}
+
+func printGlyph(g *truetype.GlyphBuf) {
+	printBounds(g.Bounds)
+	fmt.Print("Points:\n---\n")
+	e := 0
+	for i, p := range g.Points {
+		fmt.Printf("%4d, %4d", p.X, p.Y)
+		if p.Flags&0x01 != 0 {
+			fmt.Print("  on\n")
+		} else {
+			fmt.Print("  off\n")
+		}
+		if i+1 == int(g.Ends[e]) {
+			fmt.Print("---\n")
+			e++
+		}
+	}
+}
+
+func writeRandomText() {
+	var fontfile = flag.String("fontfile", "./input/fonts/AnonymousPro-Regular.ttf",
+		"filename of the ttf font")
+	flag.Parse()
+	fmt.Printf("Loading fontfile %q\n", *fontfile)
+	b, err := ioutil.ReadFile(*fontfile)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	f, err := truetype.Parse(b)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	fupe := fixed.Int26_6(f.FUnitsPerEm())
+	printBounds(f.Bounds(fupe))
+	fmt.Printf("FUnitsPerEm:%d\n\n", fupe)
+
+	c0, c1 := 'A', 'V'
+
+	i0 := f.Index(c0)
+	hm := f.HMetric(fupe, i0)
+	g := &truetype.GlyphBuf{}
+	err = g.Load(f, fupe, i0, font.HintingNone)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	fmt.Printf("'%c' glyph\n", c0)
+	fmt.Printf("AdvanceWidth:%d LeftSideBearing:%d\n", hm.AdvanceWidth, hm.LeftSideBearing)
+	printGlyph(g)
+	i1 := f.Index(c1)
+	fmt.Printf("\n'%c', '%c' Kern:%d\n", c0, c1, f.Kern(fupe, i0, i1))
+
+	fmt.Printf("\nThe numbers above are in FUnits.\n" +
+		"The numbers below are in 26.6 fixed point pixels, at 12pt and 72dpi.\n\n")
+	a := truetype.NewFace(f, &truetype.Options{
+		Size: 12,
+		DPI:  72,
+	})
+	fmt.Printf("%#v\n", a.Metrics())
+
 }
 
 //Decode an image file, return the image.Image
@@ -66,17 +140,17 @@ func getColors() []color.Color {
 }
 
 func drawFrame(img *image.Paletted, w, h int) {
-	const WIDTH_0 = 15
-	const HEIGHT_0 = 15
+	const width0 = 15
+	const height0 = 15
 
 	bounds := image.Rect(0, 0, w, h)
 	palette := getColors()
 
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			if x%WIDTH_0 == 0 && y%HEIGHT_0 == 0 {
+			if x%width0 == 0 && y%height0 == 0 {
 				draw.Draw(img,
-					image.Rect(x, y, x+WIDTH_0, y+HEIGHT_0),
+					image.Rect(x, y, x+width0, y+height0),
 					&image.Uniform{palette[rand.Intn(len(palette))]},
 					image.ZP,
 					draw.Src)
