@@ -78,7 +78,7 @@ func gifNoise(w, h int) {
 
 	//Write the output
 	t := time.Now().Unix()
-	f, _ := os.Create(fmt.Sprintf("./output/noise_%d.gif", t))
+	f, _ := os.Create(fmt.Sprintf("../output/noise_%d.gif", t))
 	defer f.Close()
 	gif.EncodeAll(f, &gif.GIF{
 		Image: images,

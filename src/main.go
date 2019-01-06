@@ -15,8 +15,9 @@ func main() {
 	gifNoise(820, 462)
 }
 
-func readHex() image.Image {
-	reader, err := os.Open("./input/hex.png")
+//Decode an image file, return the image.Image
+func readFile(path string) image.Image {
+	reader, err := os.Open(path)
 	if err != nil {
 		log.Fatal(err)
 	}
