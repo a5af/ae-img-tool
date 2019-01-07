@@ -2,12 +2,14 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
 	"image/gif"
+	"image/png"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -16,6 +18,7 @@ import (
 
 	//_ "image/gif"
 	//_ "image/jpeg"
+	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
@@ -57,47 +60,83 @@ func printGlyph(g *truetype.GlyphBuf) {
 }
 
 func writeRandomText() {
+
 	var fontfile = flag.String("fontfile", "./input/fonts/AnonymousPro-Regular.ttf",
 		"filename of the ttf font")
+
 	flag.Parse()
-	fmt.Printf("Loading fontfile %q\n", *fontfile)
-	b, err := ioutil.ReadFile(*fontfile)
+
+	// Read the font data.
+	fontBytes, err := ioutil.ReadFile(*fontfile)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	f, err := truetype.Parse(b)
+	f, err := freetype.ParseFont(fontBytes)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	fupe := fixed.Int26_6(f.FUnitsPerEm())
-	printBounds(f.Bounds(fupe))
-	fmt.Printf("FUnitsPerEm:%d\n\n", fupe)
 
-	c0, c1 := 'A', 'V'
+	// Initialize the context.
+	fg, bg := image.Black, image.White
+	ruler := color.RGBA{0xdd, 0xdd, 0xdd, 0xff}
+	if *wonb {
+		fg, bg = image.White, image.Black
+		ruler = color.RGBA{0x22, 0x22, 0x22, 0xff}
+	}
+	rgba := image.NewRGBA(image.Rect(0, 0, 640, 480))
+	draw.Draw(rgba, rgba.Bounds(), bg, image.ZP, draw.Src)
+	c := freetype.NewContext()
+	c.SetDPI(*dpi)
+	c.SetFont(f)
+	c.SetFontSize(*size)
+	c.SetClip(rgba.Bounds())
+	c.SetDst(rgba)
+	c.SetSrc(fg)
+	switch *hinting {
+	default:
+		c.SetHinting(font.HintingNone)
+	case "full":
+		c.SetHinting(font.HintingFull)
+	}
 
-	i0 := f.Index(c0)
-	hm := f.HMetric(fupe, i0)
-	g := &truetype.GlyphBuf{}
-	err = g.Load(f, fupe, i0, font.HintingNone)
+	// Draw the guidelines.
+	for i := 0; i < 200; i++ {
+		rgba.Set(10, 10+i, ruler)
+		rgba.Set(10+i, 10, ruler)
+	}
+
+	// Draw the text.
+	pt := freetype.Pt(10, 10+int(c.PointToFixed(*size)>>6))
+	for _, s := range text {
+		_, err = c.DrawString(s, pt)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		pt.Y += c.PointToFixed(*size * *spacing)
+	}
+
+	// Save that RGBA image to disk.
+	outFile, err := os.Create("out.png")
 	if err != nil {
 		log.Println(err)
-		return
+		os.Exit(1)
 	}
-	fmt.Printf("'%c' glyph\n", c0)
-	fmt.Printf("AdvanceWidth:%d LeftSideBearing:%d\n", hm.AdvanceWidth, hm.LeftSideBearing)
-	printGlyph(g)
-	i1 := f.Index(c1)
-	fmt.Printf("\n'%c', '%c' Kern:%d\n", c0, c1, f.Kern(fupe, i0, i1))
-
-	fmt.Printf("\nThe numbers above are in FUnits.\n" +
-		"The numbers below are in 26.6 fixed point pixels, at 12pt and 72dpi.\n\n")
-	a := truetype.NewFace(f, &truetype.Options{
-		Size: 12,
-		DPI:  72,
-	})
-	fmt.Printf("%#v\n", a.Metrics())
+	defer outFile.Close()
+	b := bufio.NewWriter(outFile)
+	err = png.Encode(b, rgba)
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	err = b.Flush()
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	fmt.Println("Wrote out.png OK.")
 
 }
 
