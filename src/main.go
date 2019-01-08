@@ -19,9 +19,7 @@ import (
 	//_ "image/gif"
 	//_ "image/jpeg"
 	"github.com/golang/freetype"
-	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
-	"golang.org/x/image/math/fixed"
 )
 
 /*
@@ -81,83 +79,52 @@ func main() {
 	writeRandomText()
 }
 
-func printBounds(b fixed.Rectangle26_6) {
-	fmt.Printf("Min.X:%d Min.Y:%d Max.X:%d Max.Y:%d\n", b.Min.X, b.Min.Y, b.Max.X, b.Max.Y)
-}
-
-func printGlyph(g *truetype.GlyphBuf) {
-	printBounds(g.Bounds)
-	fmt.Print("Points:\n---\n")
-	e := 0
-	for i, p := range g.Points {
-		fmt.Printf("%4d, %4d", p.X, p.Y)
-		if p.Flags&0x01 != 0 {
-			fmt.Print("  on\n")
-		} else {
-			fmt.Print("  off\n")
-		}
-		if i+1 == int(g.Ends[e]) {
-			fmt.Print("---\n")
-			e++
-		}
-	}
-}
-
 func writeRandomText() {
+	rgba := image.NewRGBA(image.Rect(0, 0, 640, 480))
+	draw.Draw(rgba, rgba.Bounds(), image.Black, image.ZP, draw.Src)
 
+	c, _ := getContext(rgba)
+	drawText(c)
+	writePngFile(rgba)
+}
+
+func getContext(rgba draw.Image) (*freetype.Context, error) {
 	var fontfile = flag.String("fontfile", "./input/fonts/AnonymousPro-Regular.ttf", "")
 	flag.Parse()
+
+	c := freetype.NewContext()
 
 	// Read the font data.
 	fontBytes, err := ioutil.ReadFile(*fontfile)
 	if err != nil {
 		log.Println(err)
-		return
+		return nil, err
 	}
 	f, err := freetype.ParseFont(fontBytes)
 	if err != nil {
 		log.Println(err)
-		return
+		return nil, err
 	}
-
-	// Initialize the context.
-	fg, bg := image.White, image.Black
-
-	rgba := image.NewRGBA(image.Rect(0, 0, 640, 480))
-	draw.Draw(rgba, rgba.Bounds(), bg, image.ZP, draw.Src)
-	c := freetype.NewContext()
 	c.SetDPI(*dpi)
 	c.SetFont(f)
 	c.SetFontSize(*size)
 	c.SetClip(rgba.Bounds())
 	c.SetDst(rgba)
-	c.SetSrc(fg)
+	c.SetSrc(image.White)
 	switch *hinting {
 	default:
 		c.SetHinting(font.HintingNone)
 	case "full":
 		c.SetHinting(font.HintingFull)
 	}
-
-	// Draw the text.
-	pt := freetype.Pt(10, 10+int(c.PointToFixed(*size)>>6))
-	for _, s := range text {
-		_, err = c.DrawString(s, pt)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		pt.Y += c.PointToFixed(*size * *spacing)
-	}
-	drawText(c)
-	writePngFile(rgba)
+	return c, nil
 }
 
 func drawText(c *freetype.Context) {
 	// Draw the text.
 	pt := freetype.Pt(10, 10+int(c.PointToFixed(*size)>>6))
 	for _, s := range text {
-		_, err = c.DrawString(s, pt)
+		_, err := c.DrawString(s, pt)
 		if err != nil {
 			log.Println(err)
 			return
