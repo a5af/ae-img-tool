@@ -32,12 +32,10 @@ Matrix generator
 */
 
 var (
-	dpi      = flag.Float64("dpi", 72, "screen resolution in Dots Per Inch")
-	fontfile = flag.String("fontfile", "../../testdata/luxisr.ttf", "filename of the ttf font")
-	hinting  = flag.String("hinting", "none", "none | full")
-	size     = flag.Float64("size", 12, "font size in points")
-	spacing  = flag.Float64("spacing", 1.5, "line spacing (e.g. 2 means double spaced)")
-	wonb     = flag.Bool("whiteonblack", false, "white text on a black background")
+	dpi     = flag.Float64("dpi", 72, "screen resolution in Dots Per Inch")
+	hinting = flag.String("hinting", "none", "none | full")
+	size    = flag.Float64("size", 12, "font size in points")
+	spacing = flag.Float64("spacing", 1.5, "line spacing (e.g. 2 means double spaced)")
 )
 
 var text = []string{
@@ -77,7 +75,6 @@ var text = []string{
 	"And the mome raths outgrabe.",
 }
 
-
 func main() {
 	log.Println("Inside Main")
 	//drawAnim(200, 120)
@@ -108,9 +105,7 @@ func printGlyph(g *truetype.GlyphBuf) {
 
 func writeRandomText() {
 
-	var fontfile = flag.String("fontfile", "./input/fonts/AnonymousPro-Regular.ttf",
-		"filename of the ttf font")
-
+	var fontfile = flag.String("fontfile", "./input/fonts/AnonymousPro-Regular.ttf", "")
 	flag.Parse()
 
 	// Read the font data.
@@ -126,12 +121,8 @@ func writeRandomText() {
 	}
 
 	// Initialize the context.
-	fg, bg := image.Black, image.White
-	ruler := color.RGBA{0xdd, 0xdd, 0xdd, 0xff}
-	if *wonb {
-		fg, bg = image.White, image.Black
-		ruler = color.RGBA{0x22, 0x22, 0x22, 0xff}
-	}
+	fg, bg := image.White, image.Black
+
 	rgba := image.NewRGBA(image.Rect(0, 0, 640, 480))
 	draw.Draw(rgba, rgba.Bounds(), bg, image.ZP, draw.Src)
 	c := freetype.NewContext()
@@ -148,12 +139,6 @@ func writeRandomText() {
 		c.SetHinting(font.HintingFull)
 	}
 
-	// Draw the guidelines.
-	for i := 0; i < 200; i++ {
-		rgba.Set(10, 10+i, ruler)
-		rgba.Set(10+i, 10, ruler)
-	}
-
 	// Draw the text.
 	pt := freetype.Pt(10, 10+int(c.PointToFixed(*size)>>6))
 	for _, s := range text {
@@ -164,9 +149,28 @@ func writeRandomText() {
 		}
 		pt.Y += c.PointToFixed(*size * *spacing)
 	}
+	drawText(c)
+	writePngFile(rgba)
+}
 
+func drawText(c *freetype.Context) {
+	// Draw the text.
+	pt := freetype.Pt(10, 10+int(c.PointToFixed(*size)>>6))
+	for _, s := range text {
+		_, err = c.DrawString(s, pt)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		pt.Y += c.PointToFixed(*size * *spacing)
+	}
+}
+
+func writePngFile(rgba image.Image) {
 	// Save that RGBA image to disk.
-	outFile, err := os.Create("out.png")
+	t := time.Now().Unix()
+	outFile, err := os.Create(fmt.Sprintf("./output/out_%d.png", t))
+
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
@@ -184,7 +188,6 @@ func writeRandomText() {
 		os.Exit(1)
 	}
 	fmt.Println("Wrote out.png OK.")
-
 }
 
 //Decode an image file, return the image.Image
@@ -202,9 +205,9 @@ func readFile(path string) image.Image {
 	return inputImage
 }
 
-func writeFile(images []*image.Paletted, delays []int) {
+func writeGifFile(images []*image.Paletted, delays []int) {
 	t := time.Now().Unix()
-	f, _ := os.Create(fmt.Sprintf("./output/noise_%d.gif", t))
+	f, _ := os.Create(fmt.Sprintf("./output/out_%d.gif", t))
 	defer f.Close()
 	gif.EncodeAll(f, &gif.GIF{
 		Image: images,
@@ -259,5 +262,5 @@ func drawAnim(w, h int) {
 		drawFrame(img, w, h)
 	}
 
-	writeFile(images, delays)
+	writeGifFile(images, delays)
 }
