@@ -20,6 +20,7 @@ import (
 	//_ "image/jpeg"
 	"github.com/golang/freetype"
 	"golang.org/x/image/font"
+	"golang.org/x/image/math/fixed"
 )
 
 /*
@@ -31,56 +32,43 @@ Matrix generator
 
 var (
 	dpi     = flag.Float64("dpi", 72, "screen resolution in Dots Per Inch")
-	hinting = flag.String("hinting", "none", "none | full")
-	size    = flag.Float64("size", 12, "font size in points")
-	spacing = flag.Float64("spacing", 1.5, "line spacing (e.g. 2 means double spaced)")
+	hinting = flag.String("hinting", "full", "none | full")
+	size    = flag.Float64("size", 25, "font size in points")
+	spacing = flag.Float64("spacing", .75, "line spacing (e.g. 2 means double spaced)")
 )
 
-var text = []string{
-	"’Twas brillig, and the slithy toves",
-	"Did gyre and gimble in the wabe;",
-	"All mimsy were the borogoves,",
-	"And the mome raths outgrabe.",
-	"",
-	"“Beware the Jabberwock, my son!",
-	"The jaws that bite, the claws that catch!",
-	"Beware the Jubjub bird, and shun",
-	"The frumious Bandersnatch!”",
-	"",
-	"He took his vorpal sword in hand:",
-	"Long time the manxome foe he sought—",
-	"So rested he by the Tumtum tree,",
-	"And stood awhile in thought.",
-	"",
-	"And as in uffish thought he stood,",
-	"The Jabberwock, with eyes of flame,",
-	"Came whiffling through the tulgey wood,",
-	"And burbled as it came!",
-	"",
-	"One, two! One, two! and through and through",
-	"The vorpal blade went snicker-snack!",
-	"He left it dead, and with its head",
-	"He went galumphing back.",
-	"",
-	"“And hast thou slain the Jabberwock?",
-	"Come to my arms, my beamish boy!",
-	"O frabjous day! Callooh! Callay!”",
-	"He chortled in his joy.",
-	"",
-	"’Twas brillig, and the slithy toves",
-	"Did gyre and gimble in the wabe;",
-	"All mimsy were the borogoves,",
-	"And the mome raths outgrabe.",
+func readTextFile(path string) string {
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		fmt.Print(err)
+	}
+	str := string(b)
+	return str
+}
+
+func getRandomText() []string {
+	text := []string{
+		"’Twas brillig, and the slithy toves",
+		"Did gyre and gimble in the wabe;",
+		"All mimsy were the borogoves,",
+		"And the mome raths outgrabe.",
+	}
+
+	for i := 0; i < 20; i++ {
+		text = append(text, readTextFile("./input/d3.v5.min.js")[600:])
+	}
+
+	return text
 }
 
 func main() {
 	log.Println("Inside Main")
 	//drawAnim(200, 120)
-	writeRandomText()
+	writeRandomText(1200, 800)
 }
 
-func writeRandomText() {
-	rgba := image.NewRGBA(image.Rect(0, 0, 640, 480))
+func writeRandomText(w, h int) {
+	rgba := image.NewRGBA(image.Rect(0, 0, w, h))
 	draw.Draw(rgba, rgba.Bounds(), image.Black, image.ZP, draw.Src)
 
 	c, _ := getContext(rgba)
@@ -120,16 +108,21 @@ func getContext(rgba draw.Image) (*freetype.Context, error) {
 	return c, nil
 }
 
+func drawVerticalString(c *freetype.Context, s string, pt fixed.Point26_6) {
+	for _, char := range s {
+		c.DrawString(string(char), pt)
+		pt.Y += c.PointToFixed(*size * *spacing)
+	}
+
+}
+
 func drawText(c *freetype.Context) {
 	// Draw the text.
-	pt := freetype.Pt(10, 10+int(c.PointToFixed(*size)>>6))
-	for _, s := range text {
-		_, err := c.DrawString(s, pt)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		pt.Y += c.PointToFixed(*size * *spacing)
+	pt := freetype.Pt(0, int(*size))
+	for _, s := range getRandomText() {
+		drawVerticalString(c, s, pt)
+
+		pt.X += c.PointToFixed(*size * *spacing)
 	}
 }
 
