@@ -33,7 +33,7 @@ Matrix generator
 var (
 	dpi     = flag.Float64("dpi", 72, "screen resolution in Dots Per Inch")
 	hinting = flag.String("hinting", "full", "none | full")
-	size    = flag.Float64("size", 25, "font size in points")
+	size    = flag.Float64("size", 17, "font size in points")
 	spacing = flag.Float64("spacing", .75, "line spacing (e.g. 2 means double spaced)")
 )
 
@@ -47,17 +47,10 @@ func readTextFile(path string) string {
 }
 
 func getRandomText() []string {
-	text := []string{
-		"’Twas brillig, and the slithy toves",
-		"Did gyre and gimble in the wabe;",
-		"All mimsy were the borogoves,",
-		"And the mome raths outgrabe.",
+	text := []string{}
+	for i := 0; i < 140; i++ {
+		text = append(text, readTextFile("./input/d3.v5.min.js")[rand.Intn(500):])
 	}
-
-	for i := 0; i < 20; i++ {
-		text = append(text, readTextFile("./input/d3.v5.min.js")[600:])
-	}
-
 	return text
 }
 
