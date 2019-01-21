@@ -31,10 +31,11 @@ Matrix generator
 */
 
 var (
-	dpi     = flag.Float64("dpi", 72, "screen resolution in Dots Per Inch")
-	hinting = flag.String("hinting", "full", "none | full")
-	size    = flag.Float64("size", 17, "font size in points")
-	spacing = flag.Float64("spacing", .75, "line spacing (e.g. 2 means double spaced)")
+	dpi      = flag.Float64("dpi", 72, "screen resolution in Dots Per Inch")
+	hinting  = flag.String("hinting", "full", "none | full")
+	size     = flag.Float64("size", 25, "font size in points")
+	spacing  = flag.Float64("spacing", .55, "line spacing (e.g. 2 means double spaced)")
+	fontfile = flag.String("fontfile", "./input/fonts/AnonymousPro-Regular.ttf", "")
 )
 
 func readTextFile(path string) string {
@@ -64,13 +65,12 @@ func writeRandomText(w, h int) {
 	rgba := image.NewRGBA(image.Rect(0, 0, w, h))
 	draw.Draw(rgba, rgba.Bounds(), image.Black, image.ZP, draw.Src)
 
-	c, _ := getContext(rgba)
-	drawText(c)
+	drawText(rgba)
 	writePngFile(rgba)
 }
 
-func getContext(rgba draw.Image) (*freetype.Context, error) {
-	var fontfile = flag.String("fontfile", "./input/fonts/AnonymousPro-Regular.ttf", "")
+func getContext(rgba draw.Image, colr color.Color, size *float64) (*freetype.Context, error) {
+
 	flag.Parse()
 
 	c := freetype.NewContext()
@@ -91,7 +91,7 @@ func getContext(rgba draw.Image) (*freetype.Context, error) {
 	c.SetFontSize(*size)
 	c.SetClip(rgba.Bounds())
 	c.SetDst(rgba)
-	c.SetSrc(image.White)
+	c.SetSrc(image.NewUniform(colr))
 	switch *hinting {
 	default:
 		c.SetHinting(font.HintingNone)
@@ -106,15 +106,15 @@ func drawVerticalString(c *freetype.Context, s string, pt fixed.Point26_6) {
 		c.DrawString(string(char), pt)
 		pt.Y += c.PointToFixed(*size * *spacing)
 	}
-
 }
 
-func drawText(c *freetype.Context) {
+func drawText(rgba draw.Image) {
 	// Draw the text.
 	pt := freetype.Pt(0, int(*size))
 	for _, s := range getRandomText() {
-		drawVerticalString(c, s, pt)
+		c, _ := getContext(rgba, getRandomColor(), size)
 
+		drawVerticalString(c, s, pt)
 		pt.X += c.PointToFixed(*size * *spacing)
 	}
 }
@@ -175,10 +175,16 @@ func getColors() []color.Color {
 		color.RGBA{0, 0, 255, 255},
 		color.RGBA{0, 255, 0, 255},
 		color.RGBA{255, 0, 0, 255},
-		color.RGBA{0, 0, 0, 255},
 		color.RGBA{127, 127, 127, 255},
 		color.RGBA{255, 255, 255, 255},
 	}
+}
+
+func getRandomColor() color.Color {
+	colors := getColors()
+	l := len(colors)
+	randColor := colors[rand.Intn(l)]
+	return randColor
 }
 
 func drawFrame(img *image.Paletted, w, h int) {
