@@ -50,7 +50,7 @@ func readTextFile(path string) string {
 func getRandomText() []string {
 	text := []string{}
 	for i := 0; i < 140; i++ {
-		text = append(text, readTextFile("./input/d3.v5.min.js")[rand.Intn(500):])
+		text = append(text, readTextFile("./input/d3.v5.min.js")[rand.Intn(500):600])
 	}
 	return text
 }
@@ -66,7 +66,14 @@ func writeRandomText(w, h int) {
 	draw.Draw(rgba, rgba.Bounds(), image.Black, image.ZP, draw.Src)
 
 	drawText(rgba)
+	applyMask(rgba)
 	writePngFile(rgba)
+}
+
+func applyMask(rgba draw.Image) {
+	//read xyb file
+	logo := readFile("./../input/xyb-black-on-trans.png")
+	log.Print(logo)
 }
 
 func getContext(rgba draw.Image, colr color.Color, size *float64) (*freetype.Context, error) {
@@ -101,20 +108,24 @@ func getContext(rgba draw.Image, colr color.Color, size *float64) (*freetype.Con
 	return c, nil
 }
 
-func drawVerticalString(c *freetype.Context, s string, pt fixed.Point26_6) {
+func drawVerticalString(rgba draw.Image, s string, pt fixed.Point26_6) *freetype.Context {
+	c, _ := getContext(rgba, getRandomColor(), size)
 	for _, char := range s {
+
+		c, _ = getContext(rgba, getRandomColor(), size)
+
 		c.DrawString(string(char), pt)
 		pt.Y += c.PointToFixed(*size * *spacing)
 	}
+	return c
 }
 
 func drawText(rgba draw.Image) {
 	// Draw the text.
-	pt := freetype.Pt(0, int(*size))
+	pt := freetype.Pt(0, 0)
 	for _, s := range getRandomText() {
-		c, _ := getContext(rgba, getRandomColor(), size)
 
-		drawVerticalString(c, s, pt)
+		c := drawVerticalString(rgba, s, pt)
 		pt.X += c.PointToFixed(*size * *spacing)
 	}
 }
