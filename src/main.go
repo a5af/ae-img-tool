@@ -26,12 +26,18 @@ var (
 func main() {
 	log.Println("Inside Main")
 
-	w := 1200
-	h := 523
+	//w := 1200
+	//h := 523
 
-	// rgba := generateMaskedLogo(w, h)
-	// writePngFile(rgba)
+	//rgba := generateMaskedLogo(w, h)
+	//writePngFile(rgba)
 
-	drawAnim(w, h)
+	//drawAnim(w, h)
+
+	// g1, _ := decodeGifFile("../input/xyb-fast.gif")
+	// g2, _ := decodeGifFile("../input/xyb-slow.gif")
+
+	// log.Print(g1.Delay, g2.Delay)
+	drawLines()
 
 }

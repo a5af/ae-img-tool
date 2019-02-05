@@ -16,8 +16,20 @@ func getColors() []color.Color {
 	}
 }
 
+func getRGB() []color.Color {
+	return []color.Color{
+		color.RGBA{0, 0, 255, 255},
+		color.RGBA{0, 255, 0, 255},
+		color.RGBA{255, 0, 0, 255},
+		color.RGBA{255, 255, 255, 255},
+		color.RGBA{255, 255, 255, 255},
+		color.RGBA{255, 255, 255, 255},
+		color.RGBA{255, 255, 255, 255},
+	}
+}
+
 func getRandomColor() color.Color {
-	colors := getColors()
+	colors := getRGB()
 	l := len(colors)
 	randColor := colors[rand.Intn(l)]
 	return randColor

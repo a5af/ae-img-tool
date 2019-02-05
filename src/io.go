@@ -62,6 +62,7 @@ func readFile(path string) (image.Image, draw.Image) {
 
 	return inputImage, asDraw
 }
+
 func writeGifFile(images []*image.Paletted, delays []int) {
 	t := time.Now().Unix()
 	f, _ := os.Create(fmt.Sprintf("../output/out_%d.gif", t))
@@ -72,4 +73,13 @@ func writeGifFile(images []*image.Paletted, delays []int) {
 	})
 
 	log.Println("Done.")
+}
+
+func decodeGifFile(path string) (*gif.GIF, error) {
+	reader, err := os.Open(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer reader.Close()
+	return gif.DecodeAll(reader)
 }

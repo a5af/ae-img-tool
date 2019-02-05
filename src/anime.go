@@ -8,7 +8,7 @@ import (
 func drawAnim(w, h int) {
 	images := []*image.Paletted{}
 	var delays []int
-	steps := 15
+	steps := 20
 
 	for step := 0; step < steps; step++ {
 		log.Print("step", step)
